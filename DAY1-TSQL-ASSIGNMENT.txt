@@ -1,0 +1,272 @@
+1 What 'go' do ?
+
+SQL Server utilities interpret GO as a signal that they should send the current batch of Transact-SQL statements to an instance of SQL Server. The current batch of statements is composed of all statements entered since the last GO, or since the start of the ad hoc session or script if this is the first GO.
+
+2. ceil,floor,round,rand,sqrt
+
+select ceiling(32.34)
+
+select floor(32.34)
+
+select round(32.345,2)
+
+select rand(5)
+
+select sqrt(36)
+
+
+3. output in stored procedure
+
+CREATE PROCEDURE GetSalByEmpNo  
+   @employeeID INT,  
+   @salary INT OUTPUT  
+AS  
+BEGIN  
+   SELECT @salary = sal
+   FROM emp
+   WHERE @employeeID=empno 
+END
+
+
+declare @salaryOut int
+exec GetSalByEmpNo 7499, @salaryOut output
+print @salaryOut
+
+
+4. CONDITIONAL STATEMENTS
+
+@declare @ListPrice int
+set @ListPrice =350
+
+WHILE (@ListPrice > $300) 
+BEGIN  
+   IF (@ListPrice > $500)  
+	BREAK
+	
+	set ListPrice = ListPrice+50
+END  
+
+
+
+
+
+IF (@ListPrice > $500)  
+      PRINT 'Price is high';  
+ELSE  
+      PRINT 'Price is low'; 
+	  
+	
+	
+
+
+CASE @ListPrice
+	WHEN 100 THEN 'LOW'
+	WHEN 200 THEN 'MODERATE'
+	WHEN 300 THEN 'HIGH'
+	ELSE 'VERY HIGH'
+END
+
+
+
+CASE
+	WHEN @ListPrice < 300 THEN 'MODERATE'
+	WHEN @ListPrice > 300 THEN 'HIGH'
+END
+
+
+from emp
+where empno=@empNo
+end
+
+exec dispEmpSalary 7499
+
+
+
+5. create a SP which accepts deptno and display
+all emp details who belong to that deptno
+
+
+create procedure DispEmpDetails(@deptNo int)
+as
+begin
+select empno,ename,sal,job,deptno,sal,mgr
+from emp
+where deptno = @deptNo
+end
+
+exec dispEmpDetails 20
+
+
+
+6. create a SP which accepts empno and display
+his/her annual sal
+
+
+create procedure DispEmpSalary(@empNo int)
+as
+begin
+select sal
+from emp
+where empno=@empNo
+end
+
+exec dispEmpSalary 7499
+
+
+
+7. create a SP which accepts deptno and display
+how many employees working in that deptno
+
+
+create procedure DispEmpCount(@deptNo int)
+as
+begin
+select count(*) empCount
+from emp
+where deptno = @deptNo
+group by deptno
+end
+
+exec dispEmpCount 20
+
+
+
+8. create a SP which accepts deptno and display
+what is the min and max sal taken in that deptno
+
+create procedure DispSalRange(@deptNo int)
+as
+begin
+select min(sal) minSal,
+	   max(sal) maxSal
+from emp
+where deptno = @deptNo
+group by deptno
+end
+
+exec DispSalRange 20
+
+
+
+9. create function which accepts empno and return
+his/her annual sal
+
+create function GetEmpAnnualSal(@empno int)
+returns int
+
+begin
+declare @salary int
+select @salary = sal*12 from emp
+where empno=@empno
+
+return @salary
+end
+
+select dbo.GetEmpAnnualSal(7499)
+
+
+
+
+10. create a function which accepts deptno
+and returns no of employee available
+in that deptno
+
+create function GetEmpCountByDeptNo(@deptno int)
+returns int
+
+begin
+declare @empCount int
+select @empCount = count(*) 
+from emp
+where deptno = @deptno
+group by deptno
+
+return @empCount
+end
+
+select dbo.GetEmpCountByDeptNo(20)
+
+
+11. Create a function which accepts mgrid and display
+all emps who report to that person
+
+create function GetEmpByMgrID(@mgrid int)
+returns table
+as
+return
+(
+	select * from emp where mgr = @mgrid
+);
+
+select * from GetEmpByMgrID(7499)
+
+
+12. Create a function which accepts num as a salary
+and display all emps who get sal more than given sal
+
+create function GetEmpBySal(@salary int)
+returns table
+as
+return
+(
+	select * from emp where sal > @salary
+);
+
+select * from GetEmpBySal(2000)
+
+
+13. String commands
+
+select ascii('A')
+select char(65)
+
+select concat('Hello',' World')
+select left('hello world',5)
+select len('hello')
+
+select lower('HELLO')
+select ltrim('    Hello')
+select replace('hello','h','H')
+select replicate('hi ',3)
+select reverse('olleh')
+
+select right('hello world',5)
+select rtrim('hello    ')
+select substring('helloooo',1,5)
+
+select trim('     hello    ')
+select upper('hello')
+
+14. DATE COMMANDS
+
+DECLARE @timeExm time(4) = '12:34:54.1237';
+print @timeExm
+
+DECLARE @date date= '2021-8-23'; 
+print @date
+
+DECLARE @datetime datetime = '2021-08-23 23:59:59.997';
+print @datetime
+
+select getdate()
+
+DECLARE @newdate date= '2021-8-23';
+select datename(day,@newdate);
+
+DECLARE @newdate2 date= '2021-8-23';
+select datepart(year,@newdate2);
+
+DECLARE @newdate3 date= '2021-8-23';
+select day(@newdate3);
+
+DECLARE @newdate4 date= '2021-8-23';
+select month(@newdate4);
+
+DECLARE @newdate5 date= '2021-8-23';
+DECLARE @newdate6 date= '2021-8-26';
+select datediff(day,@newdate5,@newdate6);
+
+DECLARE @newdate7 date= '2021-8-26';
+select dateadd(day,1,@newdate7);
+
+select isdate('2021-8-26');
