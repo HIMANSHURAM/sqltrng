@@ -1,0 +1,114 @@
+1.create a trigger which doesnt allow sal update if
+current sal is more than proposed
+
+
+
+create trigger trgInsteadOfDeleteTuesday ON emp
+INSTEAD OF DELETE
+As
+	declare @empno int;
+	declare @day varchar(50);
+	SELECT @day=datename(dw,getdate());
+	select @empno=d.empno from deleted d;
+	begin
+		if(@day='Tuesday')
+		begin
+			RAISERROR('Cannot delete this person as it is tuesday',16,1);
+		end
+		else
+		begin
+			delete from emp where empno=@empno;
+			PRINT 'Record Deleted -- Instead of Delete Trigger'
+		end
+	end
+go
+
+
+
+2.create a trigger which does not allow delete on emp
+on Thesday
+
+create trigger trgInsteadOfUpdate ON emp
+INSTEAD OF UPDATE
+As
+	declare @empNo int;
+	declare @salInsert int;
+	declare @salDelete int;
+	select @empNo=i.empno from inserted i;
+	select @salInsert=i.sal from inserted i;
+	select @salDelete=d.sal from deleted d;
+	begin
+		if(@salDelete>@salInsert)
+		begin
+			RAISERROR('Cannot update salary as this is lower than prev salary',16,1);
+		end
+		else
+		begin
+			update emp set sal=@salInsert where empno=@empno;
+			PRINT 'Record Updated -- Instead of Update Trigger'
+		end
+	end
+go
+
+
+select * from emp
+
+update emp set sal=10000 where empno=7369
+delete from emp where empno=7369;
+
+3. Transactions
+
+CREATE TABLE ValueTable (id INT);  
+BEGIN TRANSACTION;  
+       INSERT INTO ValueTable VALUES(1);  
+       INSERT INTO ValueTable VALUES(2);  
+ROLLBACK;  
+
+SELECT * FROM ValueTable
+
+BEGIN TRANSACTION;  
+       INSERT INTO ValueTable VALUES(1);  
+       INSERT INTO ValueTable VALUES(2);  
+COMMIT;  
+
+SELECT * FROM ValueTable
+
+4. set nocount on
+
+set nocount on
+go
+select top(3)ename
+from emp
+where ename like '%A%'
+go
+
+set nocount off
+go
+
+
+5. Disable triggers
+
+disable trigger triggerAfterInsertUpdateDelete on Employee_Test
+
+6. Drop Triggers
+
+DROP TRIGGER triggerAfterInsertUpdateDelete;  
+
+7. error handling for divide by zero
+
+begin try
+	declare @num int
+	declare @denom int
+	declare @res int
+	set @num=1
+	set @denom=0
+	if (@denom=0)
+		print 'Denom is zero it will throw an exception'
+	else
+		print (@num/@denom)
+end try
+begin catch
+print @@error
+print Error_Message()
+print  Error_Number();
+end catch
