@@ -1,0 +1,336 @@
+using System;
+using CoreDemo1.Models;
+using System.Linq;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Data.SqlClient;
+
+namespace CoreDemo1
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            //GetAllEmpDetails();
+            //GetAllEmpDetailsByID();
+            //GetAllEmpByDeptNo();
+            //GetMaxSal();
+            //GetsumSalByDept();
+            //GetEmpNameByCondn();
+            //AddNewEmployee();
+            //UpdateEmployee(5050);
+            //DeleteEmployee(5050);
+            //GetAllEmpDetails_SP();
+            //GetAllEmpDetailsByEmpNo_SP();
+            //GetSalByEmpNo_SP_WithParam();
+            //UpdateEmpName_SP();
+            //DeleteEmpName_SP();
+            //UpdateEmpName_SP_WithParam();
+            //DiscconectedArchitecture();
+            //Console.ReadLine();
+        }
+
+        private static void DiscconectedArchitecture()
+        {
+            var ctx = new TrainingContext();
+            try
+            {
+                var emp = ctx.Emps.Where(e => e.Empno == 2979).SingleOrDefault();
+                ctx.Dispose();
+                updateEmpName(emp);
+
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        private static void updateEmpName(Emp emp)
+        {
+            emp.Ename = "Sheela";
+            var ctx = new TrainingContext();
+            Console.WriteLine(ctx.Entry(emp).State.ToString());
+
+            //ctx.Update<Emp<(emp);
+            //OR
+            //ctx.Update(emp);
+            ////Or
+            //ctx.Emps.Update(emp);
+            //// OR
+            //ctx.Attach(emp).State = EntityState.Modified;
+            ctx.SaveChanges();
+            Console.WriteLine("emp name is updated via disconnected mode");
+        } 
+
+        private static void UpdateEmpName_SP_WithParam()
+        {
+            var ctx = new TrainingContext();
+            var param = new SqlParameter[] {
+                        new SqlParameter() {
+                            ParameterName = "@empno",
+                            SqlDbType = System.Data.SqlDbType.Int,
+                            Size=100,
+                            Direction=System.Data.ParameterDirection.Input,
+                            Value=5050
+                        },
+                        new SqlParameter()
+                        {
+                            ParameterName = "@newname",
+                            SqlDbType =System.Data.SqlDbType.VarChar,
+                            Size=10,
+                            Direction=System.Data.ParameterDirection.Input,
+                            Value="Sheela"}
+
+                        };
+            try
+            {
+                var result = ctx.Database.ExecuteSqlRaw("UpdateEmpNamebyEmpno @empno, @newname", param);
+                Console.WriteLine("Done");
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+        }
+
+
+        private static void GetSalByEmpNo_SP_WithParam()
+        {
+            var ctx = new TrainingContext();
+            var param =new SqlParameter[] {
+                        new SqlParameter() {
+                            ParameterName = "@employeeID",
+                            SqlDbType = System.Data.SqlDbType.Int,
+                            Size = 100,
+                            Direction = System.Data.ParameterDirection.Input,
+                            Value = 7369
+                        },
+                        new SqlParameter()
+                        {
+                            ParameterName = "@salary",
+                            SqlDbType = System.Data.SqlDbType.Int,
+                            Size = 10,
+                            Direction = System.Data.ParameterDirection.Output,
+                        }
+                   };
+       
+            try
+            {
+                var result = ctx.Database.ExecuteSqlRaw("GetSalByEmpNo @employeeID, @salary OUT", param);
+                var sal = (int) param[1].Value;
+                Console.WriteLine(sal);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+        }
+
+
+        private static void UpdateEmpName_SP()
+        {
+            var ctx = new TrainingContext();
+            try
+            {
+                ctx.Database.
+                    ExecuteSqlRaw("UpdateEmpNamebyEmpno @p0,@p1",5050,"Mary12");
+
+                Console.WriteLine("updation done");
+                
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException.ToString());
+            }
+        }
+
+        private static void DeleteEmpName_SP()
+        {
+            var ctx = new TrainingContext();
+            try
+            {
+                ctx.Database.
+                    ExecuteSqlRaw("DeleteEmpNamebyEmpno @p0", 5050);
+
+                Console.WriteLine("deletion done");
+
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException.ToString());
+            }
+        }
+
+        private static void GetAllEmpDetails_SP()
+        {
+            var ctx = new TrainingContext();
+            try
+            {
+                var emps = ctx.Set<Emp>().
+                    FromSqlRaw("GetAllEmpDetails").ToList();
+
+                foreach (var emp in emps)
+                {
+                    Console.WriteLine(emp.Ename + " "+emp.Sal);
+                }
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException.ToString());
+            }
+
+        }
+
+
+        private static void GetAllEmpDetailsByEmpNo_SP()
+        {
+            var ctx = new TrainingContext();
+            try
+            {
+                var emps = ctx.Set<Emp>().
+                    FromSqlRaw("GetAllEmpDetailsByEmpNo 5050").ToList();
+
+                foreach (var emp in emps)
+                {
+                    Console.WriteLine(emp.Ename + " " + emp.Sal);
+                }
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException.ToString());
+            }
+
+        }
+
+        private static void DeleteEmployee(int empNo)
+        {
+            var ctx = new TrainingContext();
+            var emps = ctx.Emps.Where(e => e.Empno == empNo).Select(e => e).SingleOrDefault();
+
+            try
+            {
+                ctx.Emps.Remove(emps);
+                ctx.SaveChanges();
+                Console.WriteLine("employee details deleted");
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException.ToString());
+            }
+        }
+
+        private static void AddNewEmployee()
+        {
+            var ctx = new TrainingContext();
+            Emp employee = new Emp();
+            employee.Empno = 5050;
+            employee.Ename = "Mary";
+            employee.Sal = 1000;
+            employee.Deptno = 10;
+
+            try
+            {
+                ctx.Emps.Add(employee);
+                ctx.SaveChanges();
+                Console.WriteLine("new employee added");
+            }
+
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.InnerException.ToString());
+            }
+        }
+
+        private static void UpdateEmployee(int empNo)
+        {
+            var ctx = new TrainingContext();
+            var emps = ctx.Emps.Where(e => e.Empno == empNo).Select(e => e).SingleOrDefault();
+            emps.Sal = 2000;
+            emps.Ename = "Sheela";
+            emps.Comm = 20;
+            //context.Products.Update(entity);
+            try
+            {
+                ctx.Emps.Update(emps);
+                ctx.SaveChanges();
+                Console.WriteLine(" employee details updated");
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException.ToString());
+            }
+        }
+
+        private static void GetEmpNameByCondn()
+        {
+            var ctx = new TrainingContext();
+            var emps = ctx.Emps.Where(e => e.Ename.StartsWith("J")).Select(e=>e.Ename);
+
+            foreach (var i in emps)
+            {
+                Console.WriteLine(i);
+            }
+        }
+
+        private static void GetsumSalByDept()
+        {
+            var ctx = new TrainingContext();
+            var emps = ctx.Emps.Where(e => e.Deptno == 10).Select(e=>e.Sal).Sum();
+            Console.WriteLine(emps);
+        }
+
+        private static void GetMaxSal()
+        {
+            var ctx = new TrainingContext();
+            var maxsal = ctx.Emps.Max(e=>e.Sal);
+            Console.WriteLine(maxsal);
+                       
+        }
+
+        private static void GetAllEmpByDeptNo()
+        {
+            var ctx = new TrainingContext();
+            var emps = ctx.Emps.Where(e => e.Deptno == 10).Select(e => e.Ename);
+            //var emps = from e in ctx.Emps
+            //           where e.Deptno == 10
+            //           select e;
+            
+            foreach (var i in emps)
+            {
+                Console.WriteLine(i);
+            }
+        }
+
+        private static void GetAllEmpDetailsByID()
+        {
+            var ctx = new TrainingContext();
+            var emps = ctx.Emps.Where(e => e.Empno == 7369).SingleOrDefault();
+            Console.WriteLine(emps.Ename + " " + emps.Sal);
+        }
+
+
+
+        private static void GetAllEmpDetails()
+        {
+            var ctx = new TrainingContext();
+
+            var emps = ctx.Emps;
+            //var emps = from e in ctx.Emps
+            //           select e;
+
+            foreach (var e in emps)
+            {
+                Console.WriteLine(e.Ename + " " + e.Sal);
+            }
+        }
+    }
+}

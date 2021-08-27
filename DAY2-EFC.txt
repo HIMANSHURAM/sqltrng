@@ -1,0 +1,304 @@
+using CodeFirst.Data;
+using CodeFirst.Models;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+namespace CodeFirst
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            //AddNewBook();
+            //AddNewCustomerAndOrder();
+            //AddNewCustomerAndMultiOrder();
+            //AddNewOrder(2);
+            //GetAllCustomersWithOrder_EagerLoading();
+            //GetAllCustomersWithOrder_ExplicitLoading();
+            //DeleteOrderById(11);
+            //DeleteAllOrderByCustomerId(2);
+            //TotalOrders();
+            //CustomerWiseOrderCount();
+        }
+
+
+
+        private static void CustomerWiseOrderCount()
+        {
+            var ctx = new Context();
+
+
+
+            // select ID, count(*) from orders group by ID
+
+
+
+            var result = from ord in ctx.Orders
+                         group ord by ord.cust.ID into g
+                         select new { customer = g.Key, count = g.Count() };
+
+
+
+            foreach (var item in result)
+            {
+                Console.WriteLine(item.customer + " " + item.count.ToString());
+            }
+        }
+
+        private static void TotalOrders()
+        {
+            var ctx = new Context();
+            //var customers = ctx.Customers.Where(e=>e.ID== customerID);
+            var orders = ctx.Orders.GroupBy(o => o.cust.ID).Select(n=> new {
+            CustomerName=n.Key,
+            Count=n.Count()
+            }).ToList();
+
+
+            foreach (var item in orders)
+            {
+                Console.WriteLine(item.CustomerName+" "+item.Count);
+            }
+            //var orders = ctx.Entry(customers).Collection(o => o.Orders).Load();
+            
+            
+            
+        }
+        private static void DeleteOrderById(int OrderID)
+        {
+            var ctx = new Context();
+            var orders = ctx.Orders.Where(e => e.Order_ID == OrderID).Select(e => e).SingleOrDefault();
+
+            try
+            {
+                ctx.Orders.Remove(orders);
+                ctx.SaveChanges();
+                Console.WriteLine("employee details deleted");
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException.ToString());
+            }
+        }
+
+
+        private static void DeleteAllOrderByCustomerId(int CustomerID)
+        {
+            var ctx = new Context();
+            
+
+            try
+            {
+                var customers = ctx.Customers.Include(o => o.Orders);
+                
+
+                foreach (var item in customers)
+                {
+                    
+
+                    foreach (var itm in item.Orders)
+                    {
+                        ctx.Orders.Remove(itm);
+                        ctx.SaveChanges();
+                    }
+                    
+                }
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        private static void GetAllCustomersWithOrder_ExplicitLoading()
+        {
+            // Explicit loading means that the related data is
+            //explicitly loaded from the database at a laser time 
+            // Need MARS to be set to TRUE in connection string
+
+            var ctx = new Context();
+            
+
+            try
+            {
+                var customers = ctx.Customers;
+                
+                foreach (var item in customers)
+                {
+                    Console.WriteLine(item.Name);
+                    Console.WriteLine("----------------");
+
+                    ctx.Entry(item).Collection(o => o.Orders).Load(); //call to the db
+
+                    foreach (var itm in item.Orders)
+                    {
+                        Console.WriteLine(itm.Amount);
+                    }
+                    Console.WriteLine("----------------------------");
+                }
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        private static void GetAllCustomersWithOrder_EagerLoading()
+        {
+            // Eager Loading means that the related data is loaded
+            //from the database as part of the initial salary
+
+            var ctx = new Context();
+            //var ctx = 
+
+            try
+            {
+                var customers = ctx.Customers.Include(o => o.Orders);
+                //var customers = ctx.Customers.Include("Orders");
+                foreach (var item in customers)
+                {
+                    Console.WriteLine(item.Name);
+                    Console.WriteLine("----------------");
+
+                    foreach (var itm in item.Orders)
+                    {
+                        Console.WriteLine(itm.Amount);
+                    }
+                    Console.WriteLine("----------------------------");
+                }
+            }
+
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+        }
+
+        private static void AddNewOrder(int CustomerId)
+        {
+            var ctx = new Context();
+            var newcust = ctx.Customers.Where(e => e.ID == CustomerId).SingleOrDefault();
+
+
+            Order ord1 = new Order();
+            ord1.Order_ID = 13;
+            ord1.Amount = 100;
+            ord1.OrderDate = DateTime.Now;
+
+            Order ord2 = new Order();
+            ord2.Order_ID = 14;
+            ord2.Amount = 500;
+            ord2.OrderDate = DateTime.Now;
+
+
+
+            List<Order> myorders = new List<Order>();
+            myorders.Add(ord1);
+            myorders.Add(ord2);
+            newcust.Orders = myorders;
+
+
+            try
+            {
+                ctx.Customers.Update(newcust);
+                ctx.SaveChanges();
+                Console.WriteLine("multiple order added ");
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException);
+            }
+        }
+        private static void AddNewCustomerAndMultiOrder()
+        {
+            var ctx = new Context();
+            Customer newcust = new Customer();
+
+            newcust.ID = 1;
+            newcust.Name = "Roja";
+
+            Order ord1 = new Order();
+            ord1.Order_ID = 11;
+            ord1.Amount = 1600;
+            ord1.OrderDate = DateTime.Now;
+
+            Order ord2 = new Order();
+            ord2.Order_ID = 12;
+            ord2.Amount = 2000;
+            ord2.OrderDate = DateTime.Now;
+
+
+
+            List<Order> myorders = new List<Order>();
+            myorders.Add(ord1);
+            myorders.Add(ord2);
+            newcust.Orders = myorders;
+
+
+            try
+            {
+                ctx.Customers.Add(newcust);
+                ctx.SaveChanges();
+                Console.WriteLine("New customer and multiple order added ");
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.InnerException);
+            }
+        }
+
+
+        private static void AddNewCustomerAndOrder()
+        {
+            var ctx = new Context();
+            Customer newcust = new Customer();
+
+            newcust.ID = 2;
+            newcust.Name = "Himanshu";
+
+            Order ord = new Order();
+            ord.Order_ID = 11;
+            ord.Amount = 1600;
+            ord.OrderDate = DateTime.Now;
+
+            ord.cust = newcust;
+
+
+            try
+            {
+                ctx.Orders.Add(ord);
+                ctx.SaveChanges();
+                Console.WriteLine("New customer and order added ");
+            }
+
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.InnerException);
+            }
+        }
+        private static void AddNewBook()
+        {
+            var ctx = new Context();
+            Book book = new Book();
+            book.BookID = 1;
+            book.BookName = "EF Core";
+            book.Price = 100;
+            try
+            {
+                ctx.Books.Add(book);
+                ctx.SaveChanges();
+                Console.WriteLine("New book added");
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.InnerException.ToString());
+            }
+        }
+    }
+}
